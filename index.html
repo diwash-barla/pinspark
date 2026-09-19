@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#050505">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pinspark - Workspace</title>
@@ -183,6 +187,15 @@
         <button id="loadMoreBtn" class="btn-back" style="display: none; padding: 12px 30px; font-size: 16px;">Load More</button>
     </div>
 
+        // --- REGISTER SERVICE WORKER (PWA) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Neural Link (Service Worker) Active!', reg.scope))
+                    .catch(err => console.error('SW Error:', err));
+            });
+        }
+    
     <script>
         // --- GLOBAL STATE ---
         let cachedBoards = [];
