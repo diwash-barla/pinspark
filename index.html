@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinspark - Workspace</title>
+    <style>
+        body {
+            margin: 0; padding: 20px;
+            background-color: #050505; color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 80px; 
+            /* मोबाइल पर हाईलाइट बॉक्स हटाने के लिए */
+            -webkit-tap-highlight-color: transparent; 
+        }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { margin: 0; font-size: 2.5rem; color: #00ffff; letter-spacing: 2px; font-family: 'Bebas Neue', Impact, sans-serif;}
+        
+        /* SEARCH BAR STYLES */
+        .search-container { max-width: 600px; margin: 0 auto 30px auto; position: relative; }
+        .search-input {
+            width: 100%; padding: 12px 20px 12px 45px; border-radius: 25px; border: 1px solid #333;
+            background-color: #111; color: #fff; font-size: 16px; box-sizing: border-box; outline: none; transition: all 0.3s ease;
+        }
+        .search-input:focus { border-color: #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
+        .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; font-size: 18px; }
+
+        .nav-controls { display: flex; justify-content: center; margin-bottom: 20px; }
+        .btn-back {
+            background-color: #111; color: #ffd700; border: 1px solid #333;
+            padding: 8px 20px; border-radius: 20px; cursor: pointer;
+            font-weight: bold; transition: all 0.3s ease; display: none;
+        }
+        .btn-back:hover { border-color: #ffd700; background-color: #1a1a1a; }
+
+        .masonry-grid { column-count: 4; column-gap: 20px; max-width: 1200px; margin: 0 auto; }
+        @media (max-width: 1000px) { .masonry-grid { column-count: 3; } }
+        @media (max-width: 700px) { .masonry-grid { column-count: 2; } }
+        @media (max-width: 400px) { .masonry-grid { column-count: 1; } }
+
+        /* BOARD CARD & COLLAGE STYLES */
+        .board-card {
+            background: #111; border-radius: 16px; padding: 12px; margin-bottom: 20px;
+            break-inside: avoid; border: 1px solid #222; transition: all 0.3s ease; cursor: pointer;
+        }
+        .board-card:hover { transform: translateY(-5px); border-color: #00ffff; }
+        
+        .board-collage {
+            display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr;
+            gap: 2px; border-radius: 12px; overflow: hidden; aspect-ratio: 4/3; margin-bottom: 12px; background-color: #222;
+        }
+        .img-main { grid-column: 1; grid-row: 1 / span 2; width: 100%; height: 100%; object-fit: cover; }
+        .img-sub1 { grid-column: 2; grid-row: 1; width: 100%; height: 100%; object-fit: cover; }
+        .img-sub2 { grid-column: 2; grid-row: 2; width: 100%; height: 100%; object-fit: cover; }
+        
+        .collage-2 .img-main { grid-column: 1; grid-row: 1 / span 2; }
+        .collage-2 .img-sub1 { grid-column: 2; grid-row: 1 / span 2; }
+        .collage-1 .img-main { grid-column: 1 / span 2; grid-row: 1 / span 2; }
+
+        .board-title { font-size: 18px; font-weight: bold; margin-bottom: 4px; color: #fff;}
+        .board-desc { font-size: 13px; color: #777;}
+        
+        /* 1. कार्ड से overflow: hidden हटा दो */
+        .pin-card {
+            background: #111; border-radius: 12px; margin-bottom: 20px; break-inside: avoid;
+            border: 1px solid #333; transition: transform 0.3s ease; cursor: pointer;
+            touch-action: pan-y;
+            /* overflow: hidden; <-- इसे डिलीट कर दो */
+        }
+
+        /* 2. इमेज/वीडियो को टॉप कॉर्नर्स से राउंड कर दो ताकि कार्ड का शेप खराब न हो */
+        .pin-image, .pin-video {
+            border-radius: 12px 12px 0 0;
+        }
+
+        .pin-card:hover { border-color: #00ffff; }
+        #loading { text-align: center; color: #00ffff; margin-top: 50px; font-style: italic; }
+
+        /* BOTTOM NAVIGATION BAR */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(17, 17, 17, 0.95); backdrop-filter: blur(10px);
+            display: flex; justify-content: space-around;
+            padding: 15px 0; border-top: 1px solid #333; z-index: 1000;
+        }
+        .nav-item {
+            color: #888; text-decoration: none; font-size: 14px;
+            font-weight: bold; cursor: pointer; transition: all 0.3s;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .nav-item.active { color: #00ffff; }
+        .nav-icon { font-size: 20px; margin-bottom: 5px; }
+
+        /* 3-DOTS MENU STYLES */
+        .menu-btn {
+            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6);
+            color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px;
+            font-size: 20px; font-weight: bold; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; z-index: 10; backdrop-filter: blur(5px);
+        }
+        .menu-btn:hover { background: rgba(0, 255, 255, 0.4); color: #000; }
+        
+        .dropdown-menu {
+            position: absolute; top: 45px; left: 10px; background: #1a1a1a;
+            border: 1px solid #333; border-radius: 8px; overflow: hidden;
+            display: none; flex-direction: column; z-index: 20; box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+        }
+        .dropdown-item {
+            padding: 10px 20px; color: #e0e0e0; font-size: 14px; cursor: pointer;
+            border-bottom: 1px solid #333; transition: background 0.2s;
+        }
+        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item:hover { background: #333; color: #00ffff; }
+
+        /* BOARD SELECTOR MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 9999; display: none;
+            align-items: center; justify-content: center; backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: #111; border: 1px solid #444; border-radius: 12px;
+            width: 90%; max-width: 400px; max-height: 70vh; overflow-y: auto;
+            padding: 20px; box-shadow: 0 10px 30px rgba(0,255,255,0.1);
+        }
+        .modal-title { font-size: 1.2rem; margin-bottom: 15px; color: #fff; text-align: center; }
+        .board-list-item {
+            padding: 12px; background: #222; margin-bottom: 8px; border-radius: 8px;
+            cursor: pointer; transition: 0.2s; border: 1px solid transparent;
+        }
+        .board-list-item:hover { background: #333; border-color: #00ffff; }
+        .close-modal {
+            display: block; width: 100%; padding: 10px; margin-top: 15px;
+            background: #ff3333; color: white; border: none; border-radius: 8px;
+            font-weight: bold; cursor: pointer;
+        }
+      
+    </style>
+</head>
+<body>
+    <!-- Save to Board Modal -->
+    <div class="modal-overlay" id="saveModal">
+        <div class="modal-content">
+            <div class="modal-title">Save to Board</div>
+            <div id="modalBoardsList"></div>
+            <button class="close-modal" onclick="closeSaveModal()">Cancel</button>
+        </div>
+    </div>
+
+    <header>
+        <h1 id="pageTitle">PINSPARK WORKSPACE</h1>
+    </header>
+
+    <div class="search-container" id="searchContainer">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search...">
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" id="navHome" onclick="switchTab('home')">
+            <span class="nav-icon">🏠</span> Home
+        </div>
+        <div class="nav-item" id="navSearch" onclick="switchTab('search')">
+            <span class="nav-icon">🔍</span> Search
+        </div>
+        <div class="nav-item" id="navBoards" onclick="switchTab('boards')">
+            <span class="nav-icon">📁</span> Boards
+        </div>
+    </div>
+  
+    <div class="nav-controls">
+        <button id="backBtn" class="btn-back" onclick="switchTab('boards')">← Back to Boards</button>
+    </div>
+
+    <div id="loading">Initializing Neural Link...</div>
+    
+    <!-- 🚨 TRUE DOM CACHING: 3 अलग-अलग कंटेनर्स 🚨 -->
+    <div class="masonry-grid" id="homeGrid"></div>
+    <div class="masonry-grid" id="searchGrid" style="display: none;"></div>
+    <div class="masonry-grid" id="boardsGrid" style="display: none;"></div>
+
+    <div style="text-align: center; margin-top: 30px; margin-bottom: 40px;">
+        <button id="loadMoreBtn" class="btn-back" style="display: none; padding: 12px 30px; font-size: 16px;">Load More</button>
+    </div>
+
+    <script>
+        // --- GLOBAL STATE ---
+        let cachedBoards = [];
+        let currentBoardId = null;
+        let currentBoardName = null;
+        
+        let currentTab = 'home';
+        let homeBookmark = null;
+        let searchBookmark = null;
+        let boardBookmark = null;
+        let currentSearchQuery = "";
+
+        // --- TAB SWITCHER LOGIC (NO RELOAD) ---
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            document.getElementById('navHome').classList.remove('active');
+            document.getElementById('navSearch').classList.remove('active');
+            document.getElementById('navBoards').classList.remove('active');
+            
+            // तीनों ग्रिड्स छुपा दो
+            document.getElementById('homeGrid').style.display = 'none';
+            document.getElementById('searchGrid').style.display = 'none';
+            document.getElementById('boardsGrid').style.display = 'none';
+            
+            const searchInput = document.getElementById('searchInput');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            
+            if (tab === 'home') {
+                document.getElementById('navHome').classList.add('active');
+                document.getElementById('searchContainer').style.display = 'none';
+                document.getElementById('homeGrid').style.display = 'block';
+                document.getElementById('pageTitle').innerText = 'FOR YOU';
+                document.getElementById('backBtn').style.display = 'none';
+                
+                // अगर खाली है तभी कॉल करो
+                if(document.getElementById('homeGrid').innerHTML === '') {
+                    loadHomeFeed();
+                } else {
+                    loadMoreBtn.style.display = homeBookmark ? 'inline-block' : 'none';
+                }
+                
+            } else if (tab === 'boards') {
+                document.getElementById('navBoards').classList.add('active');
+                document.getElementById('searchContainer').style.display = 'block';
+                document.getElementById('boardsGrid').style.display = 'block';
+                document.getElementById('pageTitle').innerText = currentBoardName || 'MY WORKSPACE';
+                
+                searchInput.placeholder = "Search your boards...";
+                searchInput.value = ''; 
+                searchInput.onkeyup = filterBoards; 
+                searchInput.onkeydown = null; 
+                
+                if (cachedBoards.length === 0) {
+                    loadBoards();
+                } else {
+                    // अगर बोर्ड व्यू में हैं
+                    if(currentBoardId) {
+                        document.getElementById('backBtn').style.display = 'block';
+                        loadMoreBtn.style.display = boardBookmark ? 'inline-block' : 'none';
+                    } else {
+                        document.getElementById('backBtn').style.display = 'none';
+                        loadMoreBtn.style.display = 'none';
+                    }
+                }
+                
+            } else if (tab === 'search') {
+                document.getElementById('navSearch').classList.add('active');
+                document.getElementById('searchContainer').style.display = 'block';
+                document.getElementById('searchGrid').style.display = 'block';
+                document.getElementById('backBtn').style.display = 'none';
+                
+                searchInput.placeholder = "Search Pinterest (Press Enter)...";
+                searchInput.value = currentSearchQuery;
+                
+                searchInput.onkeyup = null; 
+                searchInput.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        currentSearchQuery = searchInput.value.trim();
+                        if(currentSearchQuery) {
+                            document.getElementById('searchGrid').innerHTML = ''; // नया सर्च है तो पुराना मिटाओ
+                            loadSearchResults(currentSearchQuery);
+                        }
+                    }
+                };
+                
+                if (currentSearchQuery) {
+                    document.getElementById('pageTitle').innerText = `RESULTS FOR "${currentSearchQuery.toUpperCase()}"`;
+                    if(document.getElementById('searchGrid').innerHTML === '') {
+                        loadSearchResults(currentSearchQuery);
+                    } else {
+                        loadMoreBtn.style.display = searchBookmark ? 'inline-block' : 'none';
+                    }
+                } else {
+                    document.getElementById('searchGrid').innerHTML = '<div style="text-align: center; color: #888; width: 100%; margin-top: 50px;">Type something and press Enter to search the universe...</div>';
+                    document.getElementById('pageTitle').innerText = 'GLOBAL SEARCH';
+                    loadMoreBtn.style.display = 'none';
+                }
+            }
+        }
+
+        // --- GLOBAL VARIABLE FOR SAVING ---
+        let pinToSaveId = null;
+
+        // --- NEW RENDER HELPER WITH 3-DOTS & DOWNLOAD ---
+        function renderPinCard(pin, container) {
+            const card = document.createElement('div');
+            card.className = 'pin-card';
+            card.style.position = 'relative';
+            
+            let mediaHTML = pin.is_video 
+                ? `<div style="position: relative; width: 100%;">
+                    <img src="${pin.thumbnail_url}" class="pin-image" loading="lazy" style="display: block; width: 100%;">
+                    <video src="${pin.media_url}" class="pin-video" loop muted playsinline style="display: none; width: 100%; border-bottom: 2px solid #ffd700;"></video>
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,255,255,0.7); color: #000; font-weight: bold; padding: 2px 8px; border-radius: 12px; font-size: 12px; pointer-events: none;">▶ VIDEO</div>
+                   </div>`
+                : `<img src="${pin.thumbnail_url}" class="pin-image" loading="lazy" style="display: block; width: 100%;">`;
+
+            // 3-Dots Menu HTML
+            const menuHTML = `
+                <button class="menu-btn">⋮</button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-item save-btn">📌 Save to Board</div>
+                    <div class="dropdown-item download-btn">⬇️ Download</div>
+                </div>
+            `;
+
+            card.innerHTML = `${menuHTML}${mediaHTML}${pin.title ? `<div class="pin-title">${pin.title}</div>` : ''}`;
+
+            // --- 3-Dots Menu Logic ---
+            const menuBtn = card.querySelector('.menu-btn');
+            const dropdown = card.querySelector('.dropdown-menu');
+            const saveBtn = card.querySelector('.save-btn');
+            const downloadBtn = card.querySelector('.download-btn');
+
+            // मेनू खोलना/बंद करना (स्क्रॉल या लॉन्ग प्रेस ट्रिगर होने से रोकना)
+            const toggleMenu = (e) => {
+                e.stopPropagation(); e.preventDefault();
+                const isVisible = dropdown.style.display === 'flex';
+                // पहले सारे खुले हुए मेनू बंद करो
+                document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
+                dropdown.style.display = isVisible ? 'none' : 'flex';
+            };
+
+            menuBtn.addEventListener('mousedown', toggleMenu);
+            menuBtn.addEventListener('touchstart', toggleMenu, {passive: false});
+
+            // 1. Download Logic (डेटा फेच करके ब्राउज़र को फोर्स डाउनलोड कराना)
+            const handleDownload = async (e) => {
+                e.stopPropagation(); e.preventDefault();
+                dropdown.style.display = 'none';
+                try {
+                    const response = await fetch(pin.media_url);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = pin.is_video ? `Pinspark_${pin.id}.mp4` : `Pinspark_${pin.id}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } catch (err) {
+                    // अगर CORS ने ब्लॉक किया तो नए टैब में खोल दो
+                    window.open(pin.media_url, '_blank');
+                }
+            };
+            downloadBtn.addEventListener('mousedown', handleDownload);
+            downloadBtn.addEventListener('touchstart', handleDownload, {passive: false});
+
+            // 2. Save Logic (बोर्ड सेलेक्टर मॉडल खोलना)
+            const handleSave = (e) => {
+                e.stopPropagation(); e.preventDefault();
+                dropdown.style.display = 'none';
+                openSaveModal(pin.id);
+            };
+            saveBtn.addEventListener('mousedown', handleSave);
+            saveBtn.addEventListener('touchstart', handleSave, {passive: false});
+
+            // --- पुरानी लॉन्ग प्रेस और स्क्रॉल फिक्स लॉजिक ---
+            let pressTimer;
+            let isLongPress = false;
+            let isScrolling = false;
+
+            const startPress = (e) => {
+                // अगर 3-dots पर क्लिक हुआ है तो इग्नोर करो
+                if(e.target === menuBtn || e.target.closest('.dropdown-menu')) return;
+                
+                isScrolling = false; isLongPress = false;
+                document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
+                
+                pressTimer = setTimeout(() => {
+                    if (isScrolling) return;
+                    isLongPress = true;
+                    if (pin.is_video) {
+                        const img = card.querySelector('.pin-image');
+                        const vid = card.querySelector('.pin-video');
+                        if (img && vid) { img.style.display = 'none'; vid.style.display = 'block'; vid.play(); }
+                    }
+                }, 1000); 
+            };
+
+            const movePress = () => { isScrolling = true; clearTimeout(pressTimer); };
+
+            const endPress = (e) => {
+                if(e.target === menuBtn || e.target.closest('.dropdown-menu')) return;
+                clearTimeout(pressTimer);
+                if (isScrolling) return; 
+                if (!isLongPress) { 
+                    window.open(pin.media_url, '_blank'); 
+                } else {
+                    if (pin.is_video) {
+                        const img = card.querySelector('.pin-image');
+                        const vid = card.querySelector('.pin-video');
+                        if (img && vid) { vid.pause(); vid.style.display = 'none'; img.style.display = 'block'; }
+                    }
+                }
+            };
+            
+            card.addEventListener('mousedown', startPress);
+            card.addEventListener('mousemove', movePress);
+            card.addEventListener('mouseup', endPress);
+            card.addEventListener('mouseleave', () => { isScrolling = true; clearTimeout(pressTimer); });
+
+            card.addEventListener('touchstart', startPress, {passive: true});
+            card.addEventListener('touchmove', movePress, {passive: true});
+            card.addEventListener('touchend', endPress);
+            card.addEventListener('touchcancel', () => { isScrolling = true; clearTimeout(pressTimer); });
+
+            container.appendChild(card);
+        }
+
+        // --- NEW MODAL FUNCTIONS FOR SAVING ---
+        function openSaveModal(pinId) {
+            pinToSaveId = pinId;
+            const modal = document.getElementById('saveModal');
+            const list = document.getElementById('modalBoardsList');
+            list.innerHTML = '';
+            
+            // हमारे पास पहले से ही बोर्ड्स की लिस्ट cachedBoards में है!
+            if (cachedBoards.length === 0) {
+                list.innerHTML = '<div style="color:#888; text-align:center;">No boards found. Go to Boards tab first!</div>';
+            } else {
+                cachedBoards.forEach(board => {
+                    const btn = document.createElement('div');
+                    btn.className = 'board-list-item';
+                    btn.innerText = `📁 ${board.name}`;
+                    btn.onclick = () => executeSavePin(board.id, btn);
+                    list.appendChild(btn);
+                });
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeSaveModal() {
+            document.getElementById('saveModal').style.display = 'none';
+            pinToSaveId = null;
+        }
+
+        async function executeSavePin(boardId, btnElement) {
+            if(!pinToSaveId) return;
+            const originalText = btnElement.innerText;
+            btnElement.innerText = "⏳ Saving...";
+            btnElement.style.pointerEvents = 'none';
+            
+            try {
+                const response = await fetch('/api/save-pin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin_id: pinToSaveId, board_id: boardId })
+                });
+                
+                if(response.ok) {
+                    btnElement.innerText = "✅ Saved!";
+                    btnElement.style.backgroundColor = "#114411";
+                    setTimeout(closeSaveModal, 1000); // 1 सेकंड बाद मॉडल बंद कर दो
+                } else {
+                    btnElement.innerText = "❌ Failed";
+                    setTimeout(() => { btnElement.innerText = originalText; btnElement.style.pointerEvents = 'auto'; }, 2000);
+                }
+            } catch (err) {
+                btnElement.innerText = "❌ Error";
+                setTimeout(() => { btnElement.innerText = originalText; btnElement.style.pointerEvents = 'auto'; }, 2000);
+            }
+        }
+
+
+        // --- HOME FEED ---
+        async function loadHomeFeed(isLoadMore = false) {
+            const container = document.getElementById('homeGrid');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            
+            if (!isLoadMore) {
+                container.innerHTML = '';
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('loading').innerText = 'Syncing with the universe...';
+                loadMoreBtn.style.display = 'none';
+                homeBookmark = null;
+            } else {
+                loadMoreBtn.innerText = "Loading...";
+            }
+
+            try {
+                let url = '/api/home';
+                if (homeBookmark) url += `?bookmark=${encodeURIComponent(homeBookmark)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                if (!isLoadMore) document.getElementById('loading').style.display = 'none';
+                data.items.forEach(pin => renderPinCard(pin, container));
+                homeBookmark = data.bookmark;
+                if (homeBookmark) {
+                    loadMoreBtn.style.display = 'inline-block';
+                    loadMoreBtn.innerText = "Load More";
+                } else { loadMoreBtn.style.display = 'none'; }
+            } catch (err) {
+                if (!isLoadMore) document.getElementById('loading').innerText = "Matrix Error: Failed to fetch home feed.";
+                loadMoreBtn.innerText = "Error. Try Again.";
+            }
+        }
+
+        // --- GLOBAL SEARCH ---
+        async function loadSearchResults(query, isLoadMore = false) {
+            const container = document.getElementById('searchGrid');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            
+            if (!isLoadMore) {
+                container.innerHTML = '';
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('loading').innerText = 'Searching the matrix...';
+                loadMoreBtn.style.display = 'none';
+                searchBookmark = null;
+            } else {
+                loadMoreBtn.innerText = "Loading...";
+            }
+
+            try {
+                let url = `/api/search?q=${encodeURIComponent(query)}`;
+                if (searchBookmark) url += `&bookmark=${encodeURIComponent(searchBookmark)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                if (!isLoadMore) document.getElementById('loading').style.display = 'none';
+                if(data.items.length === 0 && !isLoadMore) {
+                    container.innerHTML = '<div style="color: #888; text-align: center; width: 100%;">No visuals found for this query.</div>';
+                    return;
+                }
+                data.items.forEach(pin => renderPinCard(pin, container));
+                searchBookmark = data.bookmark;
+                if (searchBookmark) {
+                    loadMoreBtn.style.display = 'inline-block';
+                    loadMoreBtn.innerText = "Load More";
+                } else { loadMoreBtn.style.display = 'none'; }
+            } catch (err) {
+                if (!isLoadMore) document.getElementById('loading').innerText = "Matrix Error: Failed to fetch search results.";
+                loadMoreBtn.innerText = "Error. Try Again.";
+            }
+        }
+
+        // --- BOARDS & PINS ---
+        async function loadBoards() {
+            document.getElementById('backBtn').style.display = 'none';
+            document.getElementById('loadMoreBtn').style.display = 'none';
+            document.getElementById('pageTitle').innerText = 'MY WORKSPACE';
+            currentBoardId = null;
+            currentBoardName = null;
+            
+            const container = document.getElementById('boardsGrid');
+            container.innerHTML = '';
+
+            if (cachedBoards.length > 0) {
+                renderBoards(cachedBoards);
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            try {
+                const response = await fetch('/api/my-boards');
+                const data = await response.json();
+                cachedBoards = data.items;
+                document.getElementById('loading').style.display = 'none';
+                renderBoards(cachedBoards);
+            } catch (err) {
+                document.getElementById('loading').innerText = "Matrix Error: Failed to fetch boards.";
+            }
+        }
+
+        function filterBoards() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = cachedBoards.filter(board => board.name.toLowerCase().includes(query));
+            renderBoards(filtered);
+        }
+
+        function getCollageHTML(thumbnails) {
+            if (thumbnails.length >= 3) {
+                return `<div class="board-collage"><img src="${thumbnails[0]}" class="img-main" loading="lazy"><img src="${thumbnails[1]}" class="img-sub1" loading="lazy"><img src="${thumbnails[2]}" class="img-sub2" loading="lazy"></div>`;
+            } else if (thumbnails.length === 2) {
+                return `<div class="board-collage collage-2"><img src="${thumbnails[0]}" class="img-main" loading="lazy"><img src="${thumbnails[1]}" class="img-sub1" loading="lazy"></div>`;
+            } else if (thumbnails.length === 1) {
+                return `<div class="board-collage collage-1"><img src="${thumbnails[0]}" class="img-main" loading="lazy"></div>`;
+            } else {
+                return `<div class="board-collage collage-1"><div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #1a1a1a; color: #555;">Empty</div></div>`;
+            }
+        }
+
+        function renderBoards(boards) {
+            const container = document.getElementById('boardsGrid');
+            container.innerHTML = '';
+            if(boards.length === 0) { container.innerHTML = '<div style="color: #888; width: 100%; text-align: center;">No boards found.</div>'; return; }
+            boards.forEach(board => {
+                const card = document.createElement('div');
+                card.className = 'board-card';
+                card.onclick = () => {
+                    currentBoardId = board.id; currentBoardName = board.name; boardBookmark = null;
+                    loadPins(board.id, board.name);
+                };
+                if (board.cachedThumbnails) {
+                    card.innerHTML = `${getCollageHTML(board.cachedThumbnails)}<div class="board-title">${board.name}</div><div class="board-desc">${board.description || ''}</div>`;
+                    container.appendChild(card);
+                } else {
+                    card.innerHTML = `<div class="board-collage collage-placeholder" id="collage-${board.id}" style="display: flex; align-items: center; justify-content: center; color: #444; font-size: 12px;">Loading...</div><div class="board-title">${board.name}</div><div class="board-desc">${board.description || ''}</div>`;
+                    container.appendChild(card);
+                    fetchCollageImages(board); 
+                }
+            });
+        }
+
+        async function fetchCollageImages(board) {
+            try {
+                const response = await fetch(`/api/boards/${board.id}/pins`);
+                const data = await response.json();
+                const pins = data.items || [];
+                board.cachedThumbnails = pins.slice(0, 3).map(p => p.thumbnail_url);
+                const collageDiv = document.getElementById(`collage-${board.id}`);
+                if(collageDiv) collageDiv.outerHTML = getCollageHTML(board.cachedThumbnails);
+            } catch (err) {
+                board.cachedThumbnails = []; 
+                const collageDiv = document.getElementById(`collage-${board.id}`);
+                if(collageDiv) collageDiv.innerHTML = `<div style="color: #555;">Error</div>`;
+            }
+        }
+
+        async function loadPins(boardId, boardName, isLoadMore = false) {
+            const container = document.getElementById('boardsGrid');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            
+            if (!isLoadMore) {
+                container.innerHTML = '';
+                document.getElementById('backBtn').style.display = 'block';
+                document.getElementById('pageTitle').innerText = boardName;
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('loading').innerText = `Extracting visuals for ${boardName}...`;
+                loadMoreBtn.style.display = 'none';
+                boardBookmark = null;
+            } else { loadMoreBtn.innerText = "Loading..."; }
+
+            try {
+                let url = `/api/boards/${boardId}/pins`;
+                if (boardBookmark) url += `?bookmark=${encodeURIComponent(boardBookmark)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (!isLoadMore) document.getElementById('loading').style.display = 'none';
+                if(data.items.length === 0 && !isLoadMore) {
+                    container.innerHTML = '<div style="color: #888; text-align: center; width: 100%;">No visuals found.</div>'; return;
+                }
+                data.items.forEach(pin => renderPinCard(pin, container));
+                boardBookmark = data.bookmark;
+                if (boardBookmark) {
+                    loadMoreBtn.style.display = 'inline-block';
+                    loadMoreBtn.innerText = "Load More";
+                } else { loadMoreBtn.style.display = 'none'; }
+            } catch (err) {
+                if (!isLoadMore) document.getElementById('loading').innerText = "Matrix Error: Failed to fetch pins.";
+                loadMoreBtn.innerText = "Error. Try Again.";
+            }
+        }
+      // --- GLOBAL EVENT LISTENERS ---
+      document.getElementById('loadMoreBtn').addEventListener('click', () => {
+          if (currentTab === 'home') {
+              loadHomeFeed(true);
+          } else if (currentTab === 'search' && currentSearchQuery) {
+              loadSearchResults(currentSearchQuery, true);
+          } else if (currentTab === 'boards' && currentBoardId) {
+              loadPins(currentBoardId, currentBoardName, true);
+          }
+      });
+      
+        // --- INIT ---
+        switchTab('home');
+    </script>
+</body>
+</html>
