@@ -64,20 +64,21 @@
         .board-title { font-size: 18px; font-weight: bold; margin-bottom: 4px; color: #fff;}
         .board-desc { font-size: 13px; color: #777;}
         
-        /* 1. कार्ड से overflow: hidden हटा दो */
+        /* PIN CARD STYLES */
         .pin-card {
             background: #111; border-radius: 12px; margin-bottom: 20px; break-inside: avoid;
             border: 1px solid #333; transition: transform 0.3s ease; cursor: pointer;
             touch-action: pan-y;
-            /* overflow: hidden; <-- इसे डिलीट कर दो */
         }
 
-        /* 2. इमेज/वीडियो को टॉप कॉर्नर्स से राउंड कर दो ताकि कार्ड का शेप खराब न हो */
         .pin-image, .pin-video {
             border-radius: 12px 12px 0 0;
+            width: 100%;
+            display: block;
         }
 
         .pin-card:hover { border-color: #00ffff; }
+        .pin-title { padding: 10px; font-size: 14px; color: #ddd; }
         #loading { text-align: center; color: #00ffff; margin-top: 50px; font-style: italic; }
 
         /* BOTTOM NAVIGATION BAR */
@@ -138,7 +139,6 @@
             background: #ff3333; color: white; border: none; border-radius: 8px;
             font-weight: bold; cursor: pointer;
         }
-      
     </style>
 </head>
 <body>
@@ -178,7 +178,7 @@
 
     <div id="loading">Initializing Neural Link...</div>
     
-    <!-- 🚨 TRUE DOM CACHING: 3 अलग-अलग कंटेनर्स 🚨 -->
+    <!-- DOM CACHING: 3 अलग-अलग कंटेनर्स -->
     <div class="masonry-grid" id="homeGrid"></div>
     <div class="masonry-grid" id="searchGrid" style="display: none;"></div>
     <div class="masonry-grid" id="boardsGrid" style="display: none;"></div>
@@ -187,6 +187,7 @@
         <button id="loadMoreBtn" class="btn-back" style="display: none; padding: 12px 30px; font-size: 16px;">Load More</button>
     </div>
 
+    <script>
         // --- REGISTER SERVICE WORKER (PWA) ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -195,8 +196,7 @@
                     .catch(err => console.error('SW Error:', err));
             });
         }
-    
-    <script>
+
         // --- GLOBAL STATE ---
         let cachedBoards = [];
         let currentBoardId = null;
@@ -216,7 +216,6 @@
             document.getElementById('navSearch').classList.remove('active');
             document.getElementById('navBoards').classList.remove('active');
             
-            // तीनों ग्रिड्स छुपा दो
             document.getElementById('homeGrid').style.display = 'none';
             document.getElementById('searchGrid').style.display = 'none';
             document.getElementById('boardsGrid').style.display = 'none';
@@ -231,7 +230,6 @@
                 document.getElementById('pageTitle').innerText = 'FOR YOU';
                 document.getElementById('backBtn').style.display = 'none';
                 
-                // अगर खाली है तभी कॉल करो
                 if(document.getElementById('homeGrid').innerHTML === '') {
                     loadHomeFeed();
                 } else {
@@ -252,7 +250,6 @@
                 if (cachedBoards.length === 0) {
                     loadBoards();
                 } else {
-                    // अगर बोर्ड व्यू में हैं
                     if(currentBoardId) {
                         document.getElementById('backBtn').style.display = 'block';
                         loadMoreBtn.style.display = boardBookmark ? 'inline-block' : 'none';
@@ -276,7 +273,7 @@
                     if (e.key === 'Enter') {
                         currentSearchQuery = searchInput.value.trim();
                         if(currentSearchQuery) {
-                            document.getElementById('searchGrid').innerHTML = ''; // नया सर्च है तो पुराना मिटाओ
+                            document.getElementById('searchGrid').innerHTML = '';
                             loadSearchResults(currentSearchQuery);
                         }
                     }
@@ -297,10 +294,9 @@
             }
         }
 
-        // --- GLOBAL VARIABLE FOR SAVING ---
         let pinToSaveId = null;
 
-        // --- NEW RENDER HELPER WITH 3-DOTS & DOWNLOAD ---
+        // --- RENDER HELPER WITH 3-DOTS & DOWNLOAD ---
         function renderPinCard(pin, container) {
             const card = document.createElement('div');
             card.className = 'pin-card';
@@ -308,13 +304,12 @@
             
             let mediaHTML = pin.is_video 
                 ? `<div style="position: relative; width: 100%;">
-                    <img src="${pin.thumbnail_url}" class="pin-image" loading="lazy" style="display: block; width: 100%;">
-                    <video src="${pin.media_url}" class="pin-video" loop muted playsinline style="display: none; width: 100%; border-bottom: 2px solid #ffd700;"></video>
+                    <img src="${pin.thumbnail_url}" class="pin-image" loading="lazy">
+                    <video src="${pin.media_url}" class="pin-video" loop muted playsinline style="display: none; border-bottom: 2px solid #ffd700;"></video>
                     <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,255,255,0.7); color: #000; font-weight: bold; padding: 2px 8px; border-radius: 12px; font-size: 12px; pointer-events: none;">▶ VIDEO</div>
                    </div>`
-                : `<img src="${pin.thumbnail_url}" class="pin-image" loading="lazy" style="display: block; width: 100%;">`;
+                : `<img src="${pin.thumbnail_url}" class="pin-image" loading="lazy">`;
 
-            // 3-Dots Menu HTML
             const menuHTML = `
                 <button class="menu-btn">⋮</button>
                 <div class="dropdown-menu">
@@ -325,17 +320,14 @@
 
             card.innerHTML = `${menuHTML}${mediaHTML}${pin.title ? `<div class="pin-title">${pin.title}</div>` : ''}`;
 
-            // --- 3-Dots Menu Logic ---
             const menuBtn = card.querySelector('.menu-btn');
             const dropdown = card.querySelector('.dropdown-menu');
             const saveBtn = card.querySelector('.save-btn');
             const downloadBtn = card.querySelector('.download-btn');
 
-            // मेनू खोलना/बंद करना (स्क्रॉल या लॉन्ग प्रेस ट्रिगर होने से रोकना)
             const toggleMenu = (e) => {
                 e.stopPropagation(); e.preventDefault();
                 const isVisible = dropdown.style.display === 'flex';
-                // पहले सारे खुले हुए मेनू बंद करो
                 document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
                 dropdown.style.display = isVisible ? 'none' : 'flex';
             };
@@ -343,7 +335,6 @@
             menuBtn.addEventListener('mousedown', toggleMenu);
             menuBtn.addEventListener('touchstart', toggleMenu, {passive: false});
 
-            // 1. Download Logic (डेटा फेच करके ब्राउज़र को फोर्स डाउनलोड कराना)
             const handleDownload = async (e) => {
                 e.stopPropagation(); e.preventDefault();
                 dropdown.style.display = 'none';
@@ -360,14 +351,12 @@
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
                 } catch (err) {
-                    // अगर CORS ने ब्लॉक किया तो नए टैब में खोल दो
                     window.open(pin.media_url, '_blank');
                 }
             };
             downloadBtn.addEventListener('mousedown', handleDownload);
             downloadBtn.addEventListener('touchstart', handleDownload, {passive: false});
 
-            // 2. Save Logic (बोर्ड सेलेक्टर मॉडल खोलना)
             const handleSave = (e) => {
                 e.stopPropagation(); e.preventDefault();
                 dropdown.style.display = 'none';
@@ -376,15 +365,12 @@
             saveBtn.addEventListener('mousedown', handleSave);
             saveBtn.addEventListener('touchstart', handleSave, {passive: false});
 
-            // --- पुरानी लॉन्ग प्रेस और स्क्रॉल फिक्स लॉजिक ---
             let pressTimer;
             let isLongPress = false;
             let isScrolling = false;
 
             const startPress = (e) => {
-                // अगर 3-dots पर क्लिक हुआ है तो इग्नोर करो
                 if(e.target === menuBtn || e.target.closest('.dropdown-menu')) return;
-                
                 isScrolling = false; isLongPress = false;
                 document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
                 
@@ -429,14 +415,12 @@
             container.appendChild(card);
         }
 
-        // --- NEW MODAL FUNCTIONS FOR SAVING ---
         function openSaveModal(pinId) {
             pinToSaveId = pinId;
             const modal = document.getElementById('saveModal');
             const list = document.getElementById('modalBoardsList');
             list.innerHTML = '';
             
-            // हमारे पास पहले से ही बोर्ड्स की लिस्ट cachedBoards में है!
             if (cachedBoards.length === 0) {
                 list.innerHTML = '<div style="color:#888; text-align:center;">No boards found. Go to Boards tab first!</div>';
             } else {
@@ -472,7 +456,7 @@
                 if(response.ok) {
                     btnElement.innerText = "✅ Saved!";
                     btnElement.style.backgroundColor = "#114411";
-                    setTimeout(closeSaveModal, 1000); // 1 सेकंड बाद मॉडल बंद कर दो
+                    setTimeout(closeSaveModal, 1000);
                 } else {
                     btnElement.innerText = "❌ Failed";
                     setTimeout(() => { btnElement.innerText = originalText; btnElement.style.pointerEvents = 'auto'; }, 2000);
@@ -483,8 +467,6 @@
             }
         }
 
-
-        // --- HOME FEED ---
         async function loadHomeFeed(isLoadMore = false) {
             const container = document.getElementById('homeGrid');
             const loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -517,7 +499,6 @@
             }
         }
 
-        // --- GLOBAL SEARCH ---
         async function loadSearchResults(query, isLoadMore = false) {
             const container = document.getElementById('searchGrid');
             const loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -554,7 +535,6 @@
             }
         }
 
-        // --- BOARDS & PINS ---
         async function loadBoards() {
             document.getElementById('backBtn').style.display = 'none';
             document.getElementById('loadMoreBtn').style.display = 'none';
@@ -672,17 +652,17 @@
                 loadMoreBtn.innerText = "Error. Try Again.";
             }
         }
-      // --- GLOBAL EVENT LISTENERS ---
-      document.getElementById('loadMoreBtn').addEventListener('click', () => {
-          if (currentTab === 'home') {
-              loadHomeFeed(true);
-          } else if (currentTab === 'search' && currentSearchQuery) {
-              loadSearchResults(currentSearchQuery, true);
-          } else if (currentTab === 'boards' && currentBoardId) {
-              loadPins(currentBoardId, currentBoardName, true);
-          }
-      });
-      
+
+        document.getElementById('loadMoreBtn').addEventListener('click', () => {
+            if (currentTab === 'home') {
+                loadHomeFeed(true);
+            } else if (currentTab === 'search' && currentSearchQuery) {
+                loadSearchResults(currentSearchQuery, true);
+            } else if (currentTab === 'boards' && currentBoardId) {
+                loadPins(currentBoardId, currentBoardName, true);
+            }
+        });
+        
         // --- INIT ---
         switchTab('home');
     </script>
